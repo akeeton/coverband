@@ -15,7 +15,7 @@ def handleEvents(events):
 			sys.exit(0)
 
 def main():
-	pygame.init()
+	pygame.display.init()
 	initScreen()
 
 	note = Note(1000, 0.0, 0.0, -20.0, 5.0, 5.0, 5.0)
