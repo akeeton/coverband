@@ -55,7 +55,7 @@ class GLObject(Repr):
 		@type glCreationFunc: A function that draws OpenGL objects
 		@param *funcArgs: The arguments to glCreationFunc
 		"""
-		if pygame.display.get_init() == False:
+		if not pygame.display.get_init():
 			raise pygame.error("Display must be initialized before using Opengl")
 
 		self.x = x
@@ -71,7 +71,7 @@ class GLObject(Repr):
 	def createGLDisplayList(self, dListNum, glCreationFunc, *funcArgs):
 		glNewList(self.displayList + dListNum, GL_COMPILE)
 		glCreationFunc(self.x, self.y, self.z, *funcArgs)
-		glEndList
+		glEndList()
 	
 	def draw(self, dListNum):
 		glCallList(self.displayList + dListNum)
@@ -93,3 +93,4 @@ class Note(Repr, GameEvent, GLObject):
 
 	def draw(self):
 		GLObject.draw(self, 0)
+		#QUAD_RECT_PRISM(self.x, self.y, self.z, self.xlen, self.ylen, self.zlen)

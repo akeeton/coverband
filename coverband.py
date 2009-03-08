@@ -15,12 +15,13 @@ def handleEvents(events):
 			sys.exit(0)
 
 def main():
-	pygame.display.init()
+	pygame.init()
 	initScreen()
 
-	note = Note(1000, 0.0, 0.0, -20.0, 5.0, 5.0, 5.0)
+	note = Note(1000, 0.0, 0.0, -40.0, 5.0, 5.0, 20.0)
 
-	zpos = 80.0
+	zpos = -1.0
+
 	while True:
 		print("zpos = %s" % (zpos))
 
@@ -28,19 +29,20 @@ def main():
 		drawGLObjects(note)
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-		glMatrixMode(GL_MODELVIEW)
 
 		glBegin(GL_TRIANGLES)
 		glVertex(0.0, 3.0, zpos)
 		glVertex(-3.0, -3.0, zpos)
 		glVertex(3.0, -3.0, zpos)
-		glEnd
+		glEnd()
+
+		drawGLObjects(note)
 
 		pygame.display.flip()
 
 		handleEvents(pygame.event.get())
 
-		zpos -= 0.5
+		zpos -= 1
 
 
 	pygame.quit()
