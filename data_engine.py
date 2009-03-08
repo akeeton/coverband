@@ -40,7 +40,7 @@ class GameEvent(Repr):
 	def __cmp__(self, other):
 		tickcmp = cmp(self.tick, other.tick)
 		if tickcmp == 0:
-			return cmp(id(x), id(y))
+			return cmp(id(self), id(other))
 
 class GLObject(Repr):
 	# The point (x, y, z) defines the center of the object.
