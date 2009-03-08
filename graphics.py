@@ -2,8 +2,22 @@ from __future__ import division
 
 import pygame
 from OpenGL.GL import *
+from OpenGL.GLU import gluPerspective
 
 def resizeGL(width, height):
+	if height == 0: height = 1
+
+	glViewport(0, 0, width, height)
+	aspect = width/height
+
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity()
+
+	gluPerspective(75.0, aspect, 1.0, 200.0)
+
+	glMatrixMode(GL_MODELVIEW)
+	glLoadIdentity()
+	"""
 	h = height / width
 	 
 	glViewport(0, 0, width, height)
@@ -13,11 +27,12 @@ def resizeGL(width, height):
 	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
 	glTranslatef(0.0, 0.0, -40.0)
+	"""
 
 def initGL():
-	glShadeModel(GL_FLAT)
-	glPolygonMode(GL_FRONT, GL_LINE)
-	glClearColor(0.5, 0.5, 0.0, 0.0)
+	glShadeModel(GL_SMOOTH)
+	#glPolygonMode(GL_FRONT, GL_LINE)
+	glClearColor(0.5, 0.5, 0.5, 0.0)
 	glClearDepth(1.0)
 	#glEnable(GL_CULL_FACE)
 	glEnable(GL_DEPTH_TEST)
@@ -26,6 +41,11 @@ def initGL():
 	#glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
 def initScreen():
+	if pygame.display.mode_ok((640, 480), pygame.OPENGL) == 0:
+		raise pygame.error("Could not set opengl")
+	if pygame.display.mode_ok((640, 480), pygame.DOUBLEBUF) == 0:
+		raise pygame.error("Could not set opengl")
+
 	pygame.display.gl_set_attribute(pygame.GL_DEPTH_SIZE, 24)
 	screen = pygame.display.set_mode((640, 480),
 			pygame.OPENGL | pygame.DOUBLEBUF)
@@ -36,8 +56,7 @@ def initScreen():
 
 def drawGLObjects(*drawables):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-	glLoadIdentity()
-	glTranslatef(0.0, 0.0, -40.0)
+	glMatrixMode(GL_MODELVIEW)
 
 	for drawable in drawables:
 		drawable.draw()

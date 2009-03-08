@@ -23,10 +23,12 @@ def main():
 	zpos = 80.0
 	while True:
 		print("zpos = %s" % (zpos))
-		handleEvents(pygame.event.get())
 
 		glColor(1.0, 1.0, 1.0)
 		drawGLObjects(note)
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		glMatrixMode(GL_MODELVIEW)
 
 		glBegin(GL_TRIANGLES)
 		glVertex(0.0, 3.0, zpos)
@@ -34,9 +36,9 @@ def main():
 		glVertex(3.0, -3.0, zpos)
 		glEnd
 
-		print(glGetError())
-
 		pygame.display.flip()
+
+		handleEvents(pygame.event.get())
 
 		zpos -= 0.5
 
