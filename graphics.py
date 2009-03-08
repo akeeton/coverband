@@ -14,30 +14,30 @@ def resizeGL(width, height):
 	glLoadIdentity()
 	glTranslatef(0.0, 0.0, -40.0)
 
-
 def initGL():
-	glShadeModel(GL_SMOOTH)
-	# glPolygonMode(GL_FRONT, GL_LINE)
-	glClearColor(1.0, 0.0, 0.0, 0.0)
+	glShadeModel(GL_FLAT)
+	glPolygonMode(GL_FRONT, GL_LINE)
+	glClearColor(0.5, 0.5, 0.0, 0.0)
 	glClearDepth(1.0)
-	glEnable(GL_CULL_FACE)
+	#glEnable(GL_CULL_FACE)
 	glEnable(GL_DEPTH_TEST)
 	glDepthFunc(GL_LEQUAL)
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
-	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
+	#glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+	#glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
 def initScreen():
 	pygame.display.gl_set_attribute(pygame.GL_DEPTH_SIZE, 24)
 	screen = pygame.display.set_mode((640, 480),
-			pygame.DOUBLEBUF | pygame.OPENGL)
+			pygame.OPENGL | pygame.DOUBLEBUF)
 	pygame.display.set_caption("Cover Band")
 
 	initGL()
 	resizeGL(screen.get_width(), screen.get_height())
 
-def drawGL(*drawables):
+def drawGLObjects(*drawables):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glLoadIdentity()
+	glTranslatef(0.0, 0.0, -40.0)
 
 	for drawable in drawables:
 		drawable.draw()

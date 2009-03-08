@@ -45,10 +45,10 @@ class GameEvent(Repr):
 class GLObject(Repr):
 	# The point (x, y, z) defines the center of the object.
 	(x, y, z) = (0.0, 0.0, 0.0)
-	dlNum = 0
+	numDLists = 0
+	displayList = 0
 
-	def __init__(self, x = 0.0, y = 0.0, z = 0.0,
-			glCreationFunc = QUAD_RECT_PRISM, *funcArgs):
+	def __init__(self, x = 0.0, y = 0.0, z = 0.0, numDLists = 0):
 		"""
 		@param glCreationFunc: This function will be used to "draw" something
 			to an OpenGL display list.
@@ -61,37 +61,35 @@ class GLObject(Repr):
 		self.x = x
 		self.y = y
 		self.z = z
+		self.numDLists = numDLists
+		self.displayList = glGenLists(self.numDLists)
 
-		self.createGLDisplayList(glCreationFunc, *funcArgs)
-	
 	def __del__(self):
-		if self.dlNum != 0:
-			glDeleteLists(self.dlNum, 1)
+		if self.displayList != 0:
+			glDeleteLists(self.displayList, self.numDLists)
 	
-	def createGLDisplayList(self, glCreationFunc, *funcArgs):
-		self.dlNum = glGenLists(1)
-
-		glNewList(self.dlNum, GL_COMPILE)
+	def createGLDisplayList(self, dListNum, glCreationFunc, *funcArgs):
+		glNewList(self.displayList + dListNum, GL_COMPILE)
 		glCreationFunc(self.x, self.y, self.z, *funcArgs)
 		glEndList
 	
-	def draw(self):
-		glCallList(self.dlNum)
+	def draw(self, dListNum):
+		glCallList(self.displayList + dListNum)
 
-class Note(Repr, GameEvent):
+class Note(Repr, GameEvent, GLObject):
 	(xlen, ylen, zlen) = (0.0, 0.0, 0.0)
-	glNote = None
 
-	def __init__(self, tick = 0, x = 0.0, y = 0.0, z = 0.0,
-			xlen = 0.0, ylen = 0.0, zlen = 0.0):
+	def __init__(self, tick, x, y, z, xlen = 1.0, ylen = 1.0, zlen = 1.0):
 		GameEvent.__init__(self, tick)
+		GLObject.__init__(self, x, y, z, numDLists = 1)
 
 		self.xlen = xlen
 		self.ylen = ylen
 		self.zlen = zlen
 
-		self.glNote = GLObject(x, y, z, QUAD_RECT_PRISM, xlen, ylen, zlen)
+		self.createGLDisplayList(0, QUAD_RECT_PRISM, xlen, ylen, zlen)
+
 		print(self)
 
 	def draw(self):
-		self.glNote.draw()
+		GLObject.draw(self, 0)

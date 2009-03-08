@@ -5,7 +5,7 @@ import pygame
 from OpenGL.GL import *
 
 from data_engine import Note
-from graphics import initScreen, drawGL
+from graphics import initScreen, drawGLObjects
 
 def handleEvents(events):
 	for event in events:
@@ -20,14 +20,25 @@ def main():
 
 	note = Note(1000, 0.0, 0.0, -20.0, 5.0, 5.0, 5.0)
 
+	zpos = 80.0
 	while True:
+		print("zpos = %s" % (zpos))
 		handleEvents(pygame.event.get())
 
-		drawGL(note)
-
 		glColor(1.0, 1.0, 1.0)
+		drawGLObjects(note)
+
+		glBegin(GL_TRIANGLES)
+		glVertex(0.0, 3.0, zpos)
+		glVertex(-3.0, -3.0, zpos)
+		glVertex(3.0, -3.0, zpos)
+		glEnd
+
+		print(glGetError())
 
 		pygame.display.flip()
+
+		zpos -= 0.5
 
 
 	pygame.quit()
