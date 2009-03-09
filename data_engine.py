@@ -1,9 +1,11 @@
 from __future__ import division
 
+
 import pygame
 from OpenGL.GL import *
 
 from graphics import *
+from globals import *
 
 class Repr:
 	"""
@@ -145,19 +147,32 @@ class Note(Repr, GameEvent, GLObject):
 	def draw(self):
 		GLObject.draw(self, 0)
 
+def BEATS_PER_SECOND(bpm):
+	return bpm * 60.0
+
 class Beat(Repr, GLObject):
 	"""
 	The Beat class is where most of the events (Notes) will go.
 	@param bpm: BPM for this beat.
 	@type bpm: positive integer
-	@eventsList: Sorted list of events local to this beat.
+	@param eventsList: Sorted list of events local to this beat.
+	@param (x, y, z): Center of the base of the beat.
 	"""
 	bpm = 120
 	eventsList = None
 
-	def __init__(self, bpm, *events):
+	(x, y, z) = (1.0, 1.0, 0.0)
+	height = 1.0
+	width = W_CHART
+
+	def __init__(self, bpm, x, y, *events):
+		GLObject.__init__(self, x, y, 0.0)
+
 		self.bpm = bpm
-		self.eventsList = list(sorted(events))
+		self.eventsList = SortedList(events)
+		self.width = W_CHART
+		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
+
 
 if __name__ == "__main__":
 	import random
