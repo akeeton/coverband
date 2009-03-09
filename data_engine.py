@@ -25,11 +25,62 @@ class Repr:
 
 		return result
 
+class SortedList(Repr):
+	items = []
+
+	def __init__(self, *items):
+		self.items = list(sorted(items))
+
+	def __getitem__(self, index):
+		return self.items[index]
+
+	def __len__(self):
+		return len(self.items)
+
+	def __iter__(self):
+		return self.items.__iter__()
+
+	def add(self, item):
+		if len(self) == 0:
+			self.items.append(item)
+			return
+
+		low = 0
+		high = len(self.items) - 1
+
+		if item >= self.items[high]:
+			self.items.append(item)
+			return
+		elif item <= self.items[low]:
+			self.items.insert(low, item)
+			return
+
+		while low <= high:
+			mid = low + ((high - low) // 2)
+
+			if self.items[mid] > item:
+				high = mid - 1
+				if high < low:
+					break
+			elif self.items[mid] < item:
+				low = mid + 1
+				if low > high:
+					mid += 1
+					break
+			else:
+				break
+
+		self.items.insert(mid, item)
+		return
+
+	def remove(self, item):
+		self.items.remove(item)
+
 class GameEvent(Repr):
 	"""
 	The main base class for all game events.
 
-	@param tick: Absolute time of the event.
+	@param tick: Time of the event relative to the beginning of the beat or song.
 	@type tick: integer in milliseconds
 	"""
 	tick = 0
@@ -93,4 +144,27 @@ class Note(Repr, GameEvent, GLObject):
 
 	def draw(self):
 		GLObject.draw(self, 0)
-		#QUAD_RECT_PRISM(self.x, self.y, self.z, self.xlen, self.ylen, self.zlen)
+
+class Beat(Repr, GLObject):
+	"""
+	The Beat class is where most of the events (Notes) will go.
+	@param bpm: BPM for this beat.
+	@type bpm: positive integer
+	@eventsList: Sorted list of events local to this beat.
+	"""
+	bpm = 120
+	eventsList = None
+
+	def __init__(self, bpm, *events):
+		self.bpm = bpm
+		self.eventsList = list(sorted(events))
+
+if __name__ == "__main__":
+	import random
+	sorted = SortedList()
+
+	unsorted = [random.randint(0, 10) for x in range(20)]
+
+	map(sorted.add, unsorted)
+
+	print("unsorted: %s\nsorted: %s" % (unsorted, sorted.items))

@@ -15,7 +15,7 @@ def handleEvents(events):
 			sys.exit(0)
 
 def main():
-	pygame.init()
+	pygame.display.init()
 	initScreen()
 
 	note = Note(1000, 0.0, 0.0, -40.0, 5.0, 5.0, 20.0)
@@ -30,13 +30,13 @@ def main():
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+		drawGLObjects(note)
+
 		glBegin(GL_TRIANGLES)
 		glVertex(0.0, 3.0, zpos)
 		glVertex(-3.0, -3.0, zpos)
 		glVertex(3.0, -3.0, zpos)
 		glEnd()
-
-		drawGLObjects(note)
 
 		pygame.display.flip()
 
