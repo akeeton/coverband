@@ -80,10 +80,6 @@ class SortedList(Repr):
 	def remove(self, item):
 		self.items.remove(item)
 
-class Color:
-	red = (1.0, 0.0, 0.0)
-	white = (1.0, 1.0, 1.0)
-	gray = (0.5, 0.5, 0.5)
 
 class GameEvent(Repr):
 	"""
@@ -143,7 +139,7 @@ class GLObject(Repr):
 		for i in range(self.numDLists):
 			glCallList(self.displayList + i)
 
-class Note(Repr, GameEvent, GLObject):
+class Note(Repr, GLObject):
 	"""
 	@param position: A fraction representing where on the chart to place the note.
 		For example, a note with position 3/8 would be the third eight-note.
@@ -151,8 +147,7 @@ class Note(Repr, GameEvent, GLObject):
 	color = "notacolor"
 	position = 0.0
 
-	def __init__(self, tick, color, position):
-		GameEvent.__init__(self, tick)
+	def __init__(self, color, position):
 		GLObject.__init__(self, GL_QUAD_RECT_PRISM, numDLists = 1)
 
 		self.color = color
@@ -164,7 +159,7 @@ def BEATS_PER_SECOND(bpm):
 
 class Beat(Repr, GLObject):
 	"""
-	The Beat class is all of the notes will go.
+	The Beat class is where all of the notes will go.
 	@param bpm: BPM for this beat.
 	@type bpm: positive integer
 	@param notesList: Sorted list of notes local to this beat.
@@ -178,11 +173,12 @@ class Beat(Repr, GLObject):
 	def __init__(self, bpm, *notes):
 		GLObject.__init__(self, self.GL_BEAT, numDLists = 1)
 
+		numLanes = self.numLanes()
+
 		self.bpm = bpm
 		self.notesList = SortedList(notes)
 		self.width = W_CHART
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
-		numLanes = self.numLanes()
 		self.wLane = (W_CHART - (numLanes + 1) * W_LINE) / numLanes
 
 		self.createGLDisplayList(1)
@@ -193,7 +189,7 @@ class Beat(Repr, GLObject):
 			yNote = 4.0 * note.position * self.height
 			noteLane = self.noteLane(note.color)
 
-			if noteLane() > 0:
+			if noteLane > 0:
 				xNote = (noteLane - 1) * wLane + (noteLane * W_LINE)
 				wNote = wLane
 				hNote = H_FAT_NOTE
@@ -202,24 +198,25 @@ class Beat(Repr, GLObject):
 				wNote = W_CHART
 				hNote = H_SKINNY_NOTE
 
-			note.createGLDisplayList(1, xNote, yNote, 0.0, wNote, hNote, hNote)
+			note.createGLDisplayList(1, xNote, yNote, 0.0, wNote, hNote, hNote,
+					Color.colors['white'])
 
 	def numLanes(self):
 		"""
 		Abstract class.
 		"""
-		pass
+		raise NotImplemented()
 	def noteLane(self, color):
 		"""
 		Abstract class.
 		"""
-		pass
+		raise NotImplemented()
 
 	def GL_BEAT(self):
 		numLanes = self.numLanes()
 
 		# Draw the vertical lines that define the lanes.
-		glColor(Color.white)
+		glColor(*Color.colors['white'])
 		for i in range(numLanes + 1):
 			GL_QUAD_RECT_PRISM(i * self.wLane, 0.0, 0.0,
 				W_LINE, self.height, W_LINE)
@@ -228,11 +225,11 @@ class Beat(Repr, GLObject):
 		GL_QUAD_RECT_PRISM(0.0, 0.0, 0.0, self.width, W_LINE, W_LINE)
 
 		# Draw the half-beat horizontal line.
-		glColor(Color.gray)
+		glColor(*Color.colors['gray'])
 		GL_QUAD_RECT_PRISM(0.0, self.height / 2.0, 0.0,
 			self.width, W_LINE, W_LINE)
 
-class DrumsBeat(Beat):
+class DrumsBeat(Repr, Beat):
 	def __init__(self, bpm, *notes):
 		Beat.__init__(self, bpm, *notes)
 

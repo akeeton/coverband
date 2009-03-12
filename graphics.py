@@ -33,6 +33,10 @@ def drawGLObjects(*drawables):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glMatrixMode(GL_MODELVIEW)
 
+	glLoadIdentity()
+	glTranslate(0.0, 0.0, -40.0)
+	#glRotate(-60.0, 1.0, 0.0, 0.0)
+
 	for drawable in drawables:
 		drawable.draw()
 	
@@ -51,16 +55,22 @@ def initScreen():
 	initGL()
 	resizeGL(screen.get_width(), screen.get_height())
 
-def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen):
+class Color:
+	colors = { "red": (1.0, 0.0, 0.0), "white": (1.0, 1.0, 1.0),
+		"gray": (0.5, 0.5, 0.5) }
+
+def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen,
+		color = Color.colors['white']):
 	"""
 	Make GL calls to create a rectangular prism with lower-left corner at
 	the point (x, y, z).
 	"""
-
 	glPushMatrix()
 	glTranslate(x, y, z)
 	# Uncomment for center at (x, y, z)
 	#glTranslate(-xlen / 2.0, -ylen / 2.0, zlen / 2.0)
+
+	glColor(*color)
 
 	glBegin(GL_QUADS)
 
