@@ -51,15 +51,16 @@ def initScreen():
 	initGL()
 	resizeGL(screen.get_width(), screen.get_height())
 
-def QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen):
+def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen):
 	"""
-	A function that draws a rectangular prism with center at the point (x, y, z)
-	using quad surfaces.
+	Make GL calls to create a rectangular prism with lower-left corner at
+	the point (x, y, z).
 	"""
 
 	glPushMatrix()
 	glTranslate(x, y, z)
-	glTranslate(-xlen / 2.0, -ylen / 2.0, zlen / 2.0)
+	# Uncomment for center at (x, y, z)
+	#glTranslate(-xlen / 2.0, -ylen / 2.0, zlen / 2.0)
 
 	glBegin(GL_QUADS)
 
