@@ -4,6 +4,8 @@ import pygame
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from globals import *
+
 def resizeGL(width, height):
 	if height == 0: height = 1
 
@@ -34,8 +36,8 @@ def drawGLObjects(*drawables):
 	glMatrixMode(GL_MODELVIEW)
 
 	glLoadIdentity()
-	glTranslate(0.0, 0.0, -40.0)
-	#glRotate(-60.0, 1.0, 0.0, 0.0)
+	glTranslate(-W_CHART / 2.0, -20.0, -40.0)
+	glRotate(-45.0, 1.0, 0.0, 0.0)
 
 	for drawable in drawables:
 		drawable.draw()
@@ -58,6 +60,22 @@ def initScreen():
 class Color:
 	colors = { "red": (1.0, 0.0, 0.0), "white": (1.0, 1.0, 1.0),
 		"gray": (0.5, 0.5, 0.5) }
+
+def GL_BEAT(width, height, wLane, numLanes):
+	# Draw the vertical lines that define the lanes.
+	xLine = 0.0
+	for i in range(numLanes + 1):
+		GL_QUAD_RECT_PRISM(xLine, 0.0, 0.0,
+			W_LINE, height, W_LINE, Color.colors['white'])
+		xLine += wLane + W_LINE
+
+	# Draw the full-beat horizontal line.
+	GL_QUAD_RECT_PRISM(0.0, 0.0, 0.0,
+			width, W_LINE, W_LINE, Color.colors['white'])
+
+	# Draw the half-beat horizontal line.
+	GL_QUAD_RECT_PRISM(0.0, height / 2.0, 0.0,
+			width, W_LINE, W_LINE, Color.colors['gray'])
 
 def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen,
 		color = Color.colors['white']):

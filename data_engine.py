@@ -80,14 +80,12 @@ class SortedList(Repr):
 	def remove(self, item):
 		self.items.remove(item)
 
-
+"""
 class GameEvent(Repr):
-	"""
 	The main base class for all game events.
 
 	@param tick: Time of the event relative to the beginning of the beat or song.
 	@type tick: integer in milliseconds
-	"""
 	tick = 0
 
 	def __init__(self, tick = 0):
@@ -97,14 +95,14 @@ class GameEvent(Repr):
 		tickcmp = cmp(self.tick, other.tick)
 		if tickcmp == 0:
 			return cmp(id(self), id(other))
+			"""
 
 class GLObject(Repr):
-	numDLists = 0
 	displayList = 0
 	glCreationFunc = None
 	created = False
 
-	def __init__(self, glCreationFunc, numDLists):
+	def __init__(self, glCreationFunc):
 		"""
 		@param glCreationFunc: This function will be used to "draw" something
 			to an OpenGL display list.
@@ -114,8 +112,7 @@ class GLObject(Repr):
 		if not pygame.display.get_init():
 			raise pygame.error("Display must be initialized before using OpenGL")
 
-		self.numDLists = numDLists
-		self.displayList = glGenLists(self.numDLists)
+		self.displayList = glGenLists(1)
 		self.glCreationFunc = glCreationFunc
 
 		# createGLDisplayList must be called before draw.
@@ -123,10 +120,10 @@ class GLObject(Repr):
 
 	def __del__(self):
 		if self.displayList != 0:
-			glDeleteLists(self.displayList, self.numDLists)
+			glDeleteLists(self.displayList, 1)
 	
-	def createGLDisplayList(self, dListNum, *funcArgs):
-		glNewList(self.displayList + dListNum, GL_COMPILE)
+	def createGLDisplayList(self, *funcArgs):
+		glNewList(self.displayList, GL_COMPILE)
 		self.glCreationFunc(*funcArgs)
 		glEndList()
 
@@ -136,8 +133,7 @@ class GLObject(Repr):
 		if not self.created:
 			raise Exception("Must call createGLDisplayList before calling draw")
 
-		for i in range(self.numDLists):
-			glCallList(self.displayList + i)
+		glCallList(self.displayList)
 
 class Note(Repr, GLObject):
 	"""
@@ -148,14 +144,25 @@ class Note(Repr, GLObject):
 	position = 0.0
 
 	def __init__(self, color, position):
-		GLObject.__init__(self, GL_QUAD_RECT_PRISM, numDLists = 1)
+		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
 
 		self.color = color
 		self.position = position
 		# The enclosing Beat object needs to call createGLDisplayList.
+	
+	def __cmp__(self, other):
+		positioncmp = cmp(self.position, other.position)
+		if positioncmp == 0:
+			colorcmp = cmp(self.color, other.color)
+			if colorcmp == 0:
+				return cmp(id(self), id(other))
+			else:
+				return colorcmp
+		else:
+			return positioncmp
 
 def BEATS_PER_SECOND(bpm):
-	return bpm * 60.0
+	return bpm / 60.0
 
 class Beat(Repr, GLObject):
 	"""
@@ -171,7 +178,7 @@ class Beat(Repr, GLObject):
 	wLane = 0.0
 
 	def __init__(self, bpm, *notes):
-		GLObject.__init__(self, self.GL_BEAT, numDLists = 1)
+		GLObject.__init__(self, GL_BEAT)
 
 		numLanes = self.numLanes()
 
@@ -181,7 +188,8 @@ class Beat(Repr, GLObject):
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
 		self.wLane = (W_CHART - (numLanes + 1) * W_LINE) / numLanes
 
-		self.createGLDisplayList(1)
+		self.createGLDisplayList(self.width, self.height,
+				self.wLane, self.numLanes())
 
 		for note in notes:	
 			wLane = self.wLane
@@ -198,8 +206,8 @@ class Beat(Repr, GLObject):
 				wNote = W_CHART
 				hNote = H_SKINNY_NOTE
 
-			note.createGLDisplayList(1, xNote, yNote, 0.0, wNote, hNote, hNote,
-					Color.colors['white'])
+			note.createGLDisplayList(xNote, yNote, 0.0, wNote, hNote, hNote,
+					Color.colors[note.color])
 
 	def numLanes(self):
 		"""
@@ -212,22 +220,6 @@ class Beat(Repr, GLObject):
 		"""
 		raise NotImplemented()
 
-	def GL_BEAT(self):
-		numLanes = self.numLanes()
-
-		# Draw the vertical lines that define the lanes.
-		glColor(*Color.colors['white'])
-		for i in range(numLanes + 1):
-			GL_QUAD_RECT_PRISM(i * self.wLane, 0.0, 0.0,
-				W_LINE, self.height, W_LINE)
-
-		# Draw the full-beat horizontal line.
-		GL_QUAD_RECT_PRISM(0.0, 0.0, 0.0, self.width, W_LINE, W_LINE)
-
-		# Draw the half-beat horizontal line.
-		glColor(*Color.colors['gray'])
-		GL_QUAD_RECT_PRISM(0.0, self.height / 2.0, 0.0,
-			self.width, W_LINE, W_LINE)
 
 class DrumsBeat(Repr, Beat):
 	def __init__(self, bpm, *notes):

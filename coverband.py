@@ -20,6 +20,9 @@ def main():
 	note = Note("red", 1.0 / 4.0)
 	beat = DrumsBeat(120, note)
 
+	print(note)
+	print(beat)
+
 	while True:
 		drawGLObjects(beat)
 
