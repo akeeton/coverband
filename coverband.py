@@ -17,11 +17,8 @@ def main():
 	pygame.display.init()
 	initScreen()
 
-	note = Note("red", 1.0 / 4.0)
-	beat = DrumsBeat(120, note)
-
-	print(note)
-	print(beat)
+	beat = DrumsBeat(120, Note("red", 1.0 / 4.0), Note("green", 1.0 / 2.0),
+			Note("orange", 3.0 / 4.0))
 
 	while True:
 		drawGLObjects(beat)

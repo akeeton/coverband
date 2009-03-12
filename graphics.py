@@ -37,7 +37,7 @@ def drawGLObjects(*drawables):
 
 	glLoadIdentity()
 	glTranslate(-W_CHART / 2.0, -20.0, -40.0)
-	glRotate(-45.0, 1.0, 0.0, 0.0)
+	glRotate(-55.0, 1.0, 0.0, 0.0)
 
 	for drawable in drawables:
 		drawable.draw()
@@ -58,14 +58,21 @@ def initScreen():
 	resizeGL(screen.get_width(), screen.get_height())
 
 class Color:
-	colors = { "red": (1.0, 0.0, 0.0), "white": (1.0, 1.0, 1.0),
-		"gray": (0.5, 0.5, 0.5) }
+	colors = { "red": (1.0, 0.0, 0.0),
+			"yellow": (1.0, 1.0, 0.0),
+			"blue": (0.0, 0.0, 1.0),
+			"green": (0.0, 1.0, 0.0),
+			"orange": (1.0, 0.5, 0.0),
+
+			"white": (1.0, 1.0, 1.0),
+			"gray": (0.5, 0.5, 0.5),
+			}
 
 def GL_BEAT(width, height, wLane, numLanes):
 	# Draw the vertical lines that define the lanes.
 	xLine = 0.0
 	for i in range(numLanes + 1):
-		GL_QUAD_RECT_PRISM(xLine, 0.0, 0.0,
+		GL_QUAD_RECT_PRISM(xLine, 0.0 + W_LINE / 2.0, 0.0,
 			W_LINE, height, W_LINE, Color.colors['white'])
 		xLine += wLane + W_LINE
 
@@ -74,7 +81,7 @@ def GL_BEAT(width, height, wLane, numLanes):
 			width, W_LINE, W_LINE, Color.colors['white'])
 
 	# Draw the half-beat horizontal line.
-	GL_QUAD_RECT_PRISM(0.0, height / 2.0, 0.0,
+	GL_QUAD_RECT_PRISM(0.0, height / 2.0 - W_LINE / 2.0, 0.0,
 			width, W_LINE, W_LINE, Color.colors['gray'])
 
 def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen,

@@ -183,7 +183,7 @@ class Beat(Repr, GLObject):
 		numLanes = self.numLanes()
 
 		self.bpm = bpm
-		self.notesList = SortedList(notes)
+		self.notesList = SortedList(*notes)
 		self.width = W_CHART
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
 		self.wLane = (W_CHART - (numLanes + 1) * W_LINE) / numLanes
@@ -191,10 +191,8 @@ class Beat(Repr, GLObject):
 		self.createGLDisplayList(self.width, self.height,
 				self.wLane, self.numLanes())
 
-		for note in notes:	
+		for note in self.notesList:	
 			wLane = self.wLane
-			# Multiply by 4 since each beat is the beginning of a quarter note.
-			yNote = 4.0 * note.position * self.height
 			noteLane = self.noteLane(note.color)
 
 			if noteLane > 0:
@@ -206,8 +204,17 @@ class Beat(Repr, GLObject):
 				wNote = W_CHART
 				hNote = H_SKINNY_NOTE
 
-			note.createGLDisplayList(xNote, yNote, 0.0, wNote, hNote, hNote,
+			# Multiply by 4 since each beat is the beginning of a quarter note.
+			#yNote = 4.0 * note.position * self.height
+			yNote = note.position * self.height - hNote / 2.0
+
+			note.createGLDisplayList(xNote, yNote, hNote / 2.0, wNote, hNote, hNote,
 					Color.colors[note.color])
+
+	def draw(self):
+		GLObject.draw(self)
+		for note in self.notesList:
+			note.draw()
 
 	def numLanes(self):
 		"""
