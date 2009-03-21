@@ -31,7 +31,8 @@ def initGL():
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
-def drawGLObjects(*drawables):
+T0 = pygame.time.get_ticks()
+def drawChart(chart):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glMatrixMode(GL_MODELVIEW)
 
@@ -39,8 +40,9 @@ def drawGLObjects(*drawables):
 	glTranslate(-W_CHART / 2.0, -20.0, -40.0)
 	glRotate(-55.0, 1.0, 0.0, 0.0)
 
-	for drawable in drawables:
-		drawable.draw()
+	tick = pygame.time.get_ticks() - T0
+	print(tick, pygame.time.get_ticks())
+	chart.update(tick)
 	
 def initScreen():
 	if not pygame.display.mode_ok((640, 480), pygame.OPENGL):

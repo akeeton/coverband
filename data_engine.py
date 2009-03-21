@@ -80,12 +80,26 @@ class SortedList(Repr):
 	def remove(self, item):
 		self.items.remove(item)
 
-"""
 class GameEvent(Repr):
+	def update(self, tick):
+		"""
+		Abstract method.
+		"""
+		raise NotImplemented()
+
+	def getDurTicks(self):
+		"""
+		Abstract method.
+		"""
+		raise NotImplemented()
+
+	"""
 	The main base class for all game events.
 
 	@param tick: Time of the event relative to the beginning of the beat or song.
 	@type tick: integer in milliseconds
+	"""
+	"""
 	tick = 0
 
 	def __init__(self, tick = 0):
@@ -163,8 +177,10 @@ class Note(Repr, GLObject):
 
 def BEATS_PER_SECOND(bpm):
 	return bpm / 60.0
+def MILLISECONDS_PER_BEAT(bpm):
+	return 60000 // bpm
 
-class Beat(Repr, GLObject):
+class Beat(Repr, GLObject, GameEvent):
 	"""
 	The Beat class is where all of the notes will go.
 	@param bpm: BPM for this beat.
@@ -172,6 +188,7 @@ class Beat(Repr, GLObject):
 	@param notesList: Sorted list of notes local to this beat.
 	"""
 	bpm = 0
+	durTicks = 0
 	notesList = None
 	width = 0.0
 	height = 0.0
@@ -183,6 +200,7 @@ class Beat(Repr, GLObject):
 		numLanes = self.numLanes()
 
 		self.bpm = bpm
+		self.durTicks = MILLISECONDS_PER_BEAT(bpm)
 		self.notesList = SortedList(*notes)
 		self.width = W_CHART
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
@@ -216,14 +234,26 @@ class Beat(Repr, GLObject):
 		for note in self.notesList:
 			note.draw()
 
+	def update(self, tick):
+		glPushMatrix()
+		glTranslate(0.0, -SPD_CHART * 1000.0 * tick, 0.0)
+
+		self.draw()
+
+		glPopMatrix()
+
+	def getDurTicks(self):
+		return self.durTicks
+
 	def numLanes(self):
 		"""
-		Abstract class.
+		Abstract method.
 		"""
 		raise NotImplemented()
 	def noteLane(self, color):
 		"""
-		Abstract class.
+		Abstract method.
+		Return the lane that the note goes in.  Lane 0 is the whole chart.
 		"""
 		raise NotImplemented()
 
@@ -236,11 +266,19 @@ class DrumsBeat(Repr, Beat):
 		return 4
 
 	def noteLane(self, color):
-		"""
-		Return the lane that the note goes in.  Lane 0 is the whole chart.
-		"""
-
 		return { "red": 1, "yellow": 2, "blue": 3, "green": 4, "orange": 0 }[color]
+
+class Chart(Repr):
+	events = []
+
+	def __init__(self, *events):
+		self.events = list(events)
+
+	def update(self, tick):
+		for event in self.events:
+			event.update(tick)
+			tick += event.getDurTicks()
+
 if __name__ == "__main__":
 	import random
 	sortedList = SortedList()

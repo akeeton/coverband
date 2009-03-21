@@ -1,10 +1,11 @@
 import sys
+import copy
 
 import pygame
 from OpenGL.GL import *
 
 from data_engine import *
-from graphics import initScreen, drawGLObjects
+from graphics import initScreen, drawChart
 
 def handleEvents(events):
 	for event in events:
@@ -19,9 +20,18 @@ def main():
 
 	beat = DrumsBeat(120, Note("red", 1.0 / 4.0), Note("green", 1.0 / 2.0),
 			Note("orange", 3.0 / 4.0))
+	beats = [beat]
+
+	"""
+	for x in range(1):
+		beats.append(copy.deepcopy(beat))
+	"""
+	drumChart = Chart(*beats)
+
+	T0 = pygame.time.get_ticks()
 
 	while True:
-		drawGLObjects(beat)
+		drawChart(drumChart)
 
 		pygame.display.flip()
 
