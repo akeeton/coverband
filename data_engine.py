@@ -154,6 +154,8 @@ class Note(Repr, GLObject):
 	position = 0.0
 	hit = False
 	miss = False
+	(x, y, z) = (0.0, 0.0, 0.0)
+	(xlen, ylen, zlen) = (0.0, 0.0, 0.0)
 
 	def __init__(self, color, position):
 		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
@@ -168,7 +170,8 @@ class Note(Repr, GLObject):
 		self.position = position
 		self.hit = False
 		self.miss = False
-		# The enclosing Beat object needs to call createGLDisplayList.
+		# The enclosing Beat object needs to call createGLDisplayList and
+		# set (x, y, z) and (xlen, ylen, zlen).
 	
 	def __cmp__(self, other):
 		positioncmp = cmp(self.position, other.position)
@@ -180,8 +183,31 @@ class Note(Repr, GLObject):
 				return colorcmp
 		else:
 			return positioncmp
+	
+	def createGLDisplayList(self, x, y, z, xlen, ylen, zlen, *funcArgs):
+		self.setCoords(x, y, z)
+		self.setDimensions(xlen, ylen, zlen)
+
+		GLObject.createGLDisplayList(self, self.x, self.y, self.z,
+				self.xlen, self.ylen, self.zlen, *funcArgs)
+
+	def draw(self):
+		if not self.miss:
+			GLObject.draw(self)
+
+	def setCoords(self, x, y, z):
+		self.x = x
+		self.y = y
+		self.z = z
+
+	def setDimensions(self, xlen, ylen, zlen):
+		self.xlen = xlen
+		self.ylen = ylen
+		self.zlen = zlen
 
 	def hit(self):
+		self.createGLDisplayList(self.x, self.y, self.z,
+				self.xlen, self.ylen, self.zlen, Color.colors['gray'])
 		self.hit = True
 
 	def miss(self):
@@ -234,12 +260,11 @@ class Beat(Repr, GLObject):
 				wNote = W_CHART
 				hNote = H_SKINNY_NOTE
 
-			# Multiply by 4 since each beat is the beginning of a quarter note.
-			#yNote = 4.0 * note.position * self.height
 			yNote = note.position * self.height - hNote / 2.0
 
-			note.createGLDisplayList(xNote, yNote, hNote / 2.0, wNote, hNote, hNote,
-					Color.colors[note.color])
+			zNote = hNote / 2.0
+			note.createGLDisplayList(xNote, yNote, zNote,
+					wNote, hNote, hNote, Color.colors[note.color])
 
 	def draw(self):
 		GLObject.draw(self)

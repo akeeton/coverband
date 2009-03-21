@@ -25,7 +25,7 @@ def main():
 
 	beats = []
 	for x in range(10):
-		beat = DrumsBeat(120 + 120 * x // 5,
+		beat = DrumsBeat(120 + 120 * (x // 5),
 				Note("red", 0.0),
 				Note("yellow", 0.0),
 				Note("orange", 1.0 / 2.0),

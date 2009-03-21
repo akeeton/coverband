@@ -103,8 +103,7 @@ class Color:
 			"orange": (1.0, 0.5, 0.0),
 
 			"white": (1.0, 1.0, 1.0),
-			"gray": (0.5, 0.5, 0.5),
-			}
+			"gray": (0.5, 0.5, 0.5) }
 
 def GL_BEAT(width, height, wLane, numLanes):
 	# Draw the vertical lines that define the lanes.
