@@ -205,13 +205,22 @@ class Note(Repr, GLObject):
 		self.ylen = ylen
 		self.zlen = zlen
 
-	def hit(self):
+	def setHit(self):
 		self.createGLDisplayList(self.x, self.y, self.z,
 				self.xlen, self.ylen, self.zlen, Color.colors['gray'])
 		self.hit = True
 
-	def miss(self):
+	def setMiss(self):
 		self.miss = True
+
+	def getPosition(self):
+		return self.position
+
+	def getHit(self):
+		return self.hit
+
+	def getMiss(self):
+		return self.miss
 
 def BEATS_PER_SECOND(bpm):
 	return bpm / 60.0
@@ -231,6 +240,9 @@ class Beat(Repr, GLObject):
 	width = 0.0
 	height = 0.0
 	wLane = 0.0
+
+	# Set after construction.
+	tick = 0
 
 	def __init__(self, bpm, *notes):
 		GLObject.__init__(self, GL_BEAT)
@@ -266,6 +278,9 @@ class Beat(Repr, GLObject):
 			note.createGLDisplayList(xNote, yNote, zNote,
 					wNote, hNote, hNote, Color.colors[note.color])
 
+	def __iter__(self):
+		return self.notesList.__iter__()
+
 	def draw(self):
 		GLObject.draw(self)
 		for note in self.notesList:
@@ -276,6 +291,12 @@ class Beat(Repr, GLObject):
 		glTranslate(0.0, -SPD_CHART * tick / 1000.0 + yOffset, 0.0)
 		self.draw()
 		glPopMatrix()
+
+	def setTick(self, tick):
+		self.tick = tick
+
+	def getTick(self):
+		return self.tick
 
 	def getDurTicks(self):
 		return self.durTicks
@@ -318,7 +339,20 @@ class Chart(Repr):
 		self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks()
 		self.lastTick = 0
 
+		tick = 0
+		for beat in self.beats:
+			beat.setTick(tick)
+			tick += beat.getDurTicks()
+
 	def update(self, tick):
+		# Check for missed notes.
+		beat = self.beats[self.currentBeatIndex]
+		for note in beat:
+			noteTick = beat.getTick() + note.getPosition() * beat.getDurTicks()
+			dt = tick - noteTick
+			if not note.getHit() and dt > MISS_THRESHOLD:
+				note.setMiss()
+
 		dt = tick - self.lastTick
 		self.lastTick = tick
 
@@ -329,12 +363,13 @@ class Chart(Repr):
 			self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks() - self.ticksRemaining
 
 		yOffset = 0
+		GL_QUAD_RECT_PRISM(0, 0, 0, W_CHART, W_LINE, W_LINE, Color.colors['yellow'])
 		for beat in self.beats:
 			beat.update(tick, yOffset)
 			yOffset += beat.getHeight()
 	
 	def tryHit(self, tick, *colors):
-		pass
+		beat = self.beats[self.currentBeatIndex]
 
 
 if __name__ == "__main__":

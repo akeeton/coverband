@@ -4,3 +4,5 @@ SPD_CHART = 1.5 * W_CHART # Units per second
 
 H_SKINNY_NOTE = 1.5 * W_LINE
 H_FAT_NOTE = 3.0 * H_SKINNY_NOTE
+
+MISS_THRESHOLD = 100	# Milliseconds
