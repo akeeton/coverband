@@ -18,17 +18,16 @@ def main():
 	pygame.display.init()
 	initScreen()
 
-	beat = DrumsBeat(120, Note("red", 1.0 / 4.0), Note("green", 1.0 / 2.0),
-			Note("orange", 3.0 / 4.0))
-	beats = [beat]
+	beats = []
+	for x in range(10):
+		beat = DrumsBeat(120 + 120 * x // 5,
+				Note("red", 0.0),
+				Note("yellow", 0.0),
+				Note("orange", 1.0 / 2.0),
+				Note("yellow", 1.0 / 2.0))
+		beats.append(beat)
 
-	"""
-	for x in range(1):
-		beats.append(copy.deepcopy(beat))
-	"""
 	drumChart = Chart(*beats)
-
-	T0 = pygame.time.get_ticks()
 
 	while True:
 		drawChart(drumChart)

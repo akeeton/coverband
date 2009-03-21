@@ -1,5 +1,7 @@
 from __future__ import division
 
+import time
+
 import pygame
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -31,17 +33,19 @@ def initGL():
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
-T0 = pygame.time.get_ticks()
+#T0 = pygame.time.get_ticks()
+T0 = int(time.clock() * 1000)
 def drawChart(chart):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glMatrixMode(GL_MODELVIEW)
 
 	glLoadIdentity()
-	glTranslate(-W_CHART / 2.0, -20.0, -40.0)
-	glRotate(-55.0, 1.0, 0.0, 0.0)
+	glTranslate(-W_CHART / 2.0, 20.0, -100.0)
+	glRotate(-40.0, 1.0, 0.0, 0.0)
 
-	tick = pygame.time.get_ticks() - T0
-	print(tick, pygame.time.get_ticks())
+	#tick = pygame.time.get_ticks() - T0
+	tick = int(time.clock() * 1000) - T0
+
 	chart.update(tick)
 	
 def initScreen():

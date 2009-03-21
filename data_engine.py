@@ -236,7 +236,7 @@ class Beat(Repr, GLObject, GameEvent):
 
 	def update(self, tick):
 		glPushMatrix()
-		glTranslate(0.0, -SPD_CHART * 1000.0 * tick, 0.0)
+		glTranslate(0.0, -SPD_CHART * tick / 1000.0, 0.0)
 
 		self.draw()
 
@@ -277,7 +277,7 @@ class Chart(Repr):
 	def update(self, tick):
 		for event in self.events:
 			event.update(tick)
-			tick += event.getDurTicks()
+			tick -= event.getDurTicks()
 
 if __name__ == "__main__":
 	import random
