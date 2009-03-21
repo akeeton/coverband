@@ -1,6 +1,7 @@
 from __future__ import division
 
 import time
+import math
 
 import pygame
 from OpenGL.GL import *
@@ -22,6 +23,10 @@ def resizeGL(width, height):
 	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
 
+def normalize((x, y, z)):
+	len = math.sqrt(x*x + y*y + z*z)
+	return (x/len, y/len, z/len)
+
 def initGL():
 	#glPolygonMode(GL_FRONT, GL_LINE)
 	glShadeModel(GL_SMOOTH)
@@ -29,6 +34,33 @@ def initGL():
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glEnable(GL_CULL_FACE)
 	glEnable(GL_DEPTH_TEST)
+
+	glEnable(GL_LIGHTING)
+
+	ambientLight = (0.5, 0.5, 0.5, 1.0)
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight)
+
+	diffuseLight = (0.5, 0.5, 0.5, 1.0)
+	specular = (1.0, 1.0, 1.0, 1.0)
+	#lightPos = (0.0, 100.0, -40.0)
+	#spotDir = normalize((0.0, -1.0, 0.0))
+	glLight(GL_LIGHT0, GL_DIFFUSE, diffuseLight)
+	glLight(GL_LIGHT0, GL_SPECULAR, specular)
+	#glLight(GL_LIGHT0, GL_POSITION, lightPos)
+	#glLight(GL_LIGHT0, GL_SPOT_DIRECTION, spotDir)
+
+	# Cut-off angle is 60 degrees.
+	#glLight(GL_LIGHT0, GL_SPOT_CUTOFF, 60.0)
+
+	glEnable(GL_LIGHT0)
+
+	glEnable(GL_COLOR_MATERIAL)
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
+
+	specref = (1.0, 1.0, 1.0, 1.0)
+	glMaterial(GL_FRONT, GL_SPECULAR, specref)
+	glMaterial(GL_FRONT, GL_SHININESS, 128)
+
 	glDepthFunc(GL_LEQUAL)
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
@@ -106,36 +138,42 @@ def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen,
 	glBegin(GL_QUADS)
 
 	# Front face
+	glNormal(0.0, 0.0, 1.0)
 	glVertex(0.0, 0.0, 0.0)		# Bottom left
 	glVertex(xlen, 0.0, 0.0)	# Bottom right
 	glVertex(xlen, ylen, 0.0)	# Top right
 	glVertex(0.0, ylen, 0.0)	# Top left
 
 	# Top face
+	glNormal(0.0, 1.0, 0.0)
 	glVertex(0.0, ylen, 0.0)	# Bottom left
 	glVertex(xlen, ylen, 0.0)	# Bottom right
 	glVertex(xlen, ylen, -zlen)	# Top right
 	glVertex(0.0, ylen, -zlen)	# Top left
 
 	# Back face
+	glNormal(0.0, 0.0, -1.0)
 	glVertex(xlen, 0.0, -zlen)	# Bottom left
 	glVertex(0.0, 0.0, -zlen)	# Bottom right
 	glVertex(0.0, ylen, -zlen)	# Top right
 	glVertex(xlen, ylen, -zlen)	# Top left
 
 	# Bottom face
+	glNormal(0.0, -1.0, 0.0)
 	glVertex(0.0, 0.0, -zlen)	# Bottom left
 	glVertex(xlen, 0.0, -zlen)	# Bottom right
 	glVertex(xlen, 0.0, 0.0)	# Top right
 	glVertex(0.0, 0.0, 0.0)		# Top left
 
 	# Right face
+	glNormal(1.0, 0.0, 0.0)
 	glVertex(xlen, 0.0, 0.0)	# Bottom left
 	glVertex(xlen, 0.0, -zlen)	# Bottom right
 	glVertex(xlen, ylen, -zlen)	# Top right
 	glVertex(xlen, ylen, 0.0)	# Top left
 
 	# Left face
+	glNormal(-1.0, 0.0, 0.0)
 	glVertex(0.0, 0.0, -zlen)	# Bottom left
 	glVertex(0.0, 0.0, 0.0)		# Bottom right
 	glVertex(0.0, ylen, 0.0)	# Top right

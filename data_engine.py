@@ -80,18 +80,14 @@ class SortedList(Repr):
 	def remove(self, item):
 		self.items.remove(item)
 
+	"""
 class GameEvent(Repr):
 	def update(self, tick):
-		"""
-		Abstract method.
-		"""
 		raise NotImplemented()
 
 	def getDurTicks(self):
-		"""
-		Abstract method.
-		"""
 		raise NotImplemented()
+		"""
 
 	"""
 	The main base class for all game events.
@@ -152,16 +148,26 @@ class GLObject(Repr):
 class Note(Repr, GLObject):
 	"""
 	@param position: A fraction representing where on the chart to place the note.
-		For example, a note with position 3/8 would be the third eight-note.
+		The value is clamped to the range [0, 1]
 	"""
-	color = "notacolor"
+	color = "red"
 	position = 0.0
+	hit = False
+	miss = False
 
 	def __init__(self, color, position):
 		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
 
 		self.color = color
+
+		if position < 0.0:
+			position = 0.0
+		elif position > 1.0:
+			position = 1.0
+
 		self.position = position
+		self.hit = False
+		self.miss = False
 		# The enclosing Beat object needs to call createGLDisplayList.
 	
 	def __cmp__(self, other):
@@ -175,12 +181,18 @@ class Note(Repr, GLObject):
 		else:
 			return positioncmp
 
+	def hit(self):
+		self.hit = True
+
+	def miss(self):
+		self.miss = True
+
 def BEATS_PER_SECOND(bpm):
 	return bpm / 60.0
 def MILLISECONDS_PER_BEAT(bpm):
 	return 60000 // bpm
 
-class Beat(Repr, GLObject, GameEvent):
+class Beat(Repr, GLObject):
 	"""
 	The Beat class is where all of the notes will go.
 	@param bpm: BPM for this beat.
@@ -234,16 +246,17 @@ class Beat(Repr, GLObject, GameEvent):
 		for note in self.notesList:
 			note.draw()
 
-	def update(self, tick):
+	def update(self, tick, yOffset):
 		glPushMatrix()
-		glTranslate(0.0, -SPD_CHART * tick / 1000.0, 0.0)
-
+		glTranslate(0.0, -SPD_CHART * tick / 1000.0 + yOffset, 0.0)
 		self.draw()
-
 		glPopMatrix()
 
 	def getDurTicks(self):
 		return self.durTicks
+
+	def getHeight(self):
+		return self.height
 
 	def numLanes(self):
 		"""
@@ -269,15 +282,35 @@ class DrumsBeat(Repr, Beat):
 		return { "red": 1, "yellow": 2, "blue": 3, "green": 4, "orange": 0 }[color]
 
 class Chart(Repr):
-	events = []
+	beats = []
+	currentBeatIndex = 0
+	ticksRemaining = 0
+	lastTick = 0
 
-	def __init__(self, *events):
-		self.events = list(events)
+	def __init__(self, *beats):
+		self.beats = list(beats)
+		self.currentBeatIndex = 0
+		self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks()
+		self.lastTick = 0
 
 	def update(self, tick):
-		for event in self.events:
-			event.update(tick)
-			tick -= event.getDurTicks()
+		dt = tick - self.lastTick
+		self.lastTick = tick
+
+		self.ticksRemaining -= dt
+		while (self.ticksRemaining <= 0 and
+				self.currentBeatIndex + 1 < len(self.beats)):
+			self.currentBeatIndex += 1
+			self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks() - self.ticksRemaining
+
+		yOffset = 0
+		for beat in self.beats:
+			beat.update(tick, yOffset)
+			yOffset += beat.getHeight()
+	
+	def tryHit(self, tick, *colors):
+		pass
+
 
 if __name__ == "__main__":
 	import random

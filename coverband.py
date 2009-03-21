@@ -7,12 +7,17 @@ from OpenGL.GL import *
 from data_engine import *
 from graphics import initScreen, drawChart
 
+paused = False
+
 def handleEvents(events):
 	for event in events:
 		if event.type == pygame.QUIT:
 			sys.exit(0)
 		elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
 			sys.exit(0)
+		elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+			global paused
+			paused = not paused
 
 def main():
 	pygame.display.init()
@@ -30,7 +35,9 @@ def main():
 	drumChart = Chart(*beats)
 
 	while True:
-		drawChart(drumChart)
+		global paused
+		if not paused:
+			drawChart(drumChart)
 
 		pygame.display.flip()
 
