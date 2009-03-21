@@ -1,0 +1,6 @@
+W_LINE = 1.0
+W_CHART = 75.0 * W_LINE
+SPD_CHART = 2.5 * W_CHART # Units per second
+
+H_SKINNY_NOTE = 1.5 * W_LINE
+H_FAT_NOTE = 3.0 * H_SKINNY_NOTE
