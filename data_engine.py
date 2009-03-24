@@ -1,10 +1,36 @@
 from __future__ import division
 
+import time
+
 import pygame
 from OpenGL.GL import *
 
 from graphics import *
 from globals import *
+
+class Time():
+	"""
+	Manage time.
+	"""
+	T0 = 0
+
+	@staticmethod
+	def initT0():
+		Time.T0 = int(1000.0 * time.clock())
+
+	@staticmethod
+	def ticks():
+		"""
+		Number of ticks since T0 was set in milliseconds.
+		"""
+		return Time.absTicks() - T0
+
+	@staticmethod
+	def absTicks():
+		"""
+		Number of ticks in milliseconds -- implementation defined.
+		"""
+		return int(1000.0 * time.clock())
 
 class Repr:
 	"""
@@ -157,6 +183,9 @@ class Note(Repr, GLObject):
 	(x, y, z) = (0.0, 0.0, 0.0)
 	(xlen, ylen, zlen) = (0.0, 0.0, 0.0)
 
+	# Set after __init__
+	tick = 0
+
 	def __init__(self, color, position):
 		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
 
@@ -192,7 +221,7 @@ class Note(Repr, GLObject):
 				self.xlen, self.ylen, self.zlen, *funcArgs)
 
 	def draw(self):
-		if not self.miss:
+		if not self.hit:
 			GLObject.draw(self)
 
 	def setCoords(self, x, y, z):
@@ -206,12 +235,18 @@ class Note(Repr, GLObject):
 		self.zlen = zlen
 
 	def setHit(self):
-		self.createGLDisplayList(self.x, self.y, self.z,
-				self.xlen, self.ylen, self.zlen, Color.colors['gray'])
 		self.hit = True
 
 	def setMiss(self):
+		self.createGLDisplayList(self.x, self.y, self.z,
+				self.xlen, self.ylen, self.zlen, Color.colors['gray'])
 		self.miss = True
+
+	def setTick(self, tick):
+		self.tick = tick
+
+	def getTick(self):
+		return self.tick
 
 	def getPosition(self):
 		return self.position
@@ -221,6 +256,9 @@ class Note(Repr, GLObject):
 
 	def getMiss(self):
 		return self.miss
+
+	def getColor(self):
+		return self.color
 
 def BEATS_PER_SECOND(bpm):
 	return bpm / 60.0
@@ -251,7 +289,8 @@ class Beat(Repr, GLObject):
 
 		self.bpm = bpm
 		self.durTicks = MILLISECONDS_PER_BEAT(bpm)
-		self.notesList = SortedList(*notes)
+		# TODO: SortedList needed?
+		self.notesList = list(notes)	# SortedList(*notes)
 		self.width = W_CHART
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
 		self.wLane = (W_CHART - (numLanes + 1) * W_LINE) / numLanes
@@ -294,6 +333,8 @@ class Beat(Repr, GLObject):
 
 	def setTick(self, tick):
 		self.tick = tick
+		for note in self.notesList:
+			note.setTick(self.tick + note.getPosition() * self.durTicks)
 
 	def getTick(self):
 		return self.tick
@@ -303,6 +344,9 @@ class Beat(Repr, GLObject):
 
 	def getHeight(self):
 		return self.height
+
+	def getNotesList(self):
+		return self.notesList
 
 	def numLanes(self):
 		"""
@@ -348,7 +392,7 @@ class Chart(Repr):
 		# Check for missed notes.
 		beat = self.beats[self.currentBeatIndex]
 		for note in beat:
-			noteTick = beat.getTick() + note.getPosition() * beat.getDurTicks()
+			noteTick = note.getTick()
 			dt = tick - noteTick
 			if not note.getHit() and dt > MISS_THRESHOLD:
 				note.setMiss()
@@ -356,20 +400,35 @@ class Chart(Repr):
 		dt = tick - self.lastTick
 		self.lastTick = tick
 
+		# Update the current beat.
 		self.ticksRemaining -= dt
 		while (self.ticksRemaining <= 0 and
 				self.currentBeatIndex + 1 < len(self.beats)):
 			self.currentBeatIndex += 1
 			self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks() - self.ticksRemaining
 
+		# Draw a line that represents the current position of the chart.
 		yOffset = 0
 		GL_QUAD_RECT_PRISM(0, 0, 0, W_CHART, W_LINE, W_LINE, Color.colors['yellow'])
+
+		# Draw all of the beats.
 		for beat in self.beats:
 			beat.update(tick, yOffset)
 			yOffset += beat.getHeight()
 	
-	def tryHit(self, tick, *colors):
-		beat = self.beats[self.currentBeatIndex]
+	def tryHit(self, tick, color):
+		# Check the current and next beat for notes to hit.
+		index = self.currentBeatIndex
+		(curBeat, nextBeat) = (self.beats[index],
+				self.beats[index + 1] if index + 1 < len(self.beats) else [])
+
+		notes = curBeat.getNotesList() + nextBeat.getNotesList()
+
+		for note in notes:
+			if (not note.getMiss() and not note.getHit() and note.getColor() == color
+					and abs(note.getTick() - tick) < HIT_THRESHOLD):
+				note.setHit()
+				break
 
 
 if __name__ == "__main__":
