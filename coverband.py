@@ -19,21 +19,26 @@ def handleEvents(events):
 			global paused
 			paused = not paused
 		elif event.type == pygame.KEYDOWN and event.key == pygame.K_a:
-			drumChart.tryHit(Time.ticks(), "red")
+			drumChart.tryHit(Color('red'))
 
 def main():
-	pygame.display.init()
+	pygame.init()
 	initScreen()
-	Time.initT0()
 
 	beats = []
-	for x in range(20):
-		beat = DrumsBeat(120,
+	for x in range(10):
+		beat1 = DrumsBeat(120,
 				Note("red", 0.0),
 				Note("yellow", 0.0),
-				Note("orange", 1.0 / 2.0),
+				Note("orange", 0.0),
 				Note("yellow", 1.0 / 2.0))
-		beats.append(beat)
+		beat2 = DrumsBeat(120,
+				Note("orange", 0.0),
+				Note("yellow", 0.0),
+				Note("yellow", 1.0 / 2.0))
+
+		beats.append(beat1)
+		beats.append(beat2)
 
 	global drumChart
 	drumChart = Chart(*beats)

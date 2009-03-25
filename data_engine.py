@@ -14,23 +14,16 @@ class Time():
 	"""
 	T0 = 0
 
-	@staticmethod
-	def initT0():
-		Time.T0 = int(1000.0 * time.clock())
+	def __init__(self):
+		self.T0 = int(1000.0 * time.clock())
+		print("Time T0 initialized to %s" % (self.T0))
 
-	@staticmethod
-	def ticks():
+	def ticks(self):
 		"""
-		Number of ticks since T0 was set in milliseconds.
+		Number of ticks since T0 in milliseconds.
 		"""
-		return Time.absTicks() - T0
+		return int(1000.0 * time.clock()) - self.T0
 
-	@staticmethod
-	def absTicks():
-		"""
-		Number of ticks in milliseconds -- implementation defined.
-		"""
-		return int(1000.0 * time.clock())
 
 class Repr:
 	"""
@@ -174,9 +167,10 @@ class GLObject(Repr):
 class Note(Repr, GLObject):
 	"""
 	@param position: A fraction representing where on the chart to place the note.
-		The value is clamped to the range [0, 1]
+	@type position: A value clamped to the range [0.0, 1.0]
+	@type color: L{Color}
 	"""
-	color = "red"
+	color = Color('red')
 	position = 0.0
 	hit = False
 	miss = False
@@ -186,10 +180,10 @@ class Note(Repr, GLObject):
 	# Set after __init__
 	tick = 0
 
-	def __init__(self, color, position):
+	def __init__(self, colorDesc, position):
 		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
 
-		self.color = color
+		self.color = Color(colorDesc)
 
 		if position < 0.0:
 			position = 0.0
@@ -239,7 +233,7 @@ class Note(Repr, GLObject):
 
 	def setMiss(self):
 		self.createGLDisplayList(self.x, self.y, self.z,
-				self.xlen, self.ylen, self.zlen, Color.colors['gray'])
+				self.xlen, self.ylen, self.zlen, Color('miss', alpha = 0.8)) 
 		self.miss = True
 
 	def setTick(self, tick):
@@ -315,7 +309,7 @@ class Beat(Repr, GLObject):
 
 			zNote = hNote / 2.0
 			note.createGLDisplayList(xNote, yNote, zNote,
-					wNote, hNote, hNote, Color.colors[note.color])
+					wNote, hNote, hNote, note.getColor())
 
 	def __iter__(self):
 		return self.notesList.__iter__()
@@ -369,7 +363,9 @@ class DrumsBeat(Repr, Beat):
 		return 4
 
 	def noteLane(self, color):
-		return { "red": 1, "yellow": 2, "blue": 3, "green": 4, "orange": 0 }[color]
+		return { "red": 1, "yellow": 2,
+				"blue": 3, "green": 4,
+				"orange": 0 }[str(color)]
 
 class Chart(Repr):
 	beats = []
@@ -377,18 +373,24 @@ class Chart(Repr):
 	ticksRemaining = 0
 	lastTick = 0
 
+	time = None
+
 	def __init__(self, *beats):
 		self.beats = list(beats)
 		self.currentBeatIndex = 0
 		self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks()
 		self.lastTick = 0
 
-		tick = 0
+		self.time = Time()
+
+		# FIXME: Is this right?
+		tick = self.time.ticks()
 		for beat in self.beats:
 			beat.setTick(tick)
 			tick += beat.getDurTicks()
 
-	def update(self, tick):
+	def update(self):
+		tick = self.time.ticks()
 		# Check for missed notes.
 		index = self.currentBeatIndex
 		curBeat = self.beats[index]
@@ -413,14 +415,19 @@ class Chart(Repr):
 
 		# Draw a line that represents the current position of the chart.
 		yOffset = 0
-		GL_QUAD_RECT_PRISM(0, 0, 0, W_CHART, W_LINE, W_LINE, Color.colors['yellow'])
+		GL_QUAD_RECT_PRISM(0, 0, 0, W_CHART, W_LINE, W_LINE, Color('yellow'))
 
 		# Draw all of the beats.
 		for beat in self.beats:
 			beat.update(tick, yOffset)
 			yOffset += beat.getHeight()
 	
-	def tryHit(self, tick, color):
+	def tryHit(self, color):
+		"""
+		@type color: L{Color}
+		"""
+		tick = self.time.ticks()
+
 		# Check the current and next beat for notes to hit.
 		index = self.currentBeatIndex
 		curBeat = self.beats[index]
@@ -428,7 +435,8 @@ class Chart(Repr):
 		notes = curBeat.getNotesList() + nextBeat.getNotesList() if nextBeat else []
 
 		for note in notes:
-			if (not note.getMiss() and not note.getHit() and note.getColor() == color
+			if (not note.getMiss() and not note.getHit()
+					and note.getColor() == color
 					and abs(note.getTick() - tick) < HIT_THRESHOLD):
 				note.setHit()
 				break
