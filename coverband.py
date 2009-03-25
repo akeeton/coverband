@@ -27,8 +27,8 @@ def main():
 	Time.initT0()
 
 	beats = []
-	for x in range(10):
-		beat = DrumsBeat(120 + 120 * (x // 5),
+	for x in range(20):
+		beat = DrumsBeat(120,
 				Note("red", 0.0),
 				Note("yellow", 0.0),
 				Note("orange", 1.0 / 2.0),

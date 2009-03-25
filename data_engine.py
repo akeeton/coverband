@@ -390,11 +390,15 @@ class Chart(Repr):
 
 	def update(self, tick):
 		# Check for missed notes.
-		beat = self.beats[self.currentBeatIndex]
-		for note in beat:
+		index = self.currentBeatIndex
+		curBeat = self.beats[index]
+		prevBeat = self.beats[index - 1] if index > 0 else None
+		notes = curBeat.getNotesList() + prevBeat.getNotesList() if prevBeat else []
+
+		for note in notes:
 			noteTick = note.getTick()
 			dt = tick - noteTick
-			if not note.getHit() and dt > MISS_THRESHOLD:
+			if not note.getHit() and not note.getMiss() and dt > MISS_THRESHOLD:
 				note.setMiss()
 
 		dt = tick - self.lastTick
@@ -419,10 +423,9 @@ class Chart(Repr):
 	def tryHit(self, tick, color):
 		# Check the current and next beat for notes to hit.
 		index = self.currentBeatIndex
-		(curBeat, nextBeat) = (self.beats[index],
-				self.beats[index + 1] if index + 1 < len(self.beats) else [])
-
-		notes = curBeat.getNotesList() + nextBeat.getNotesList()
+		curBeat = self.beats[index]
+		nextBeat = self.beats[index + 1] if index + 1 < len(self.beats) else None
+		notes = curBeat.getNotesList() + nextBeat.getNotesList() if nextBeat else []
 
 		for note in notes:
 			if (not note.getMiss() and not note.getHit() and note.getColor() == color

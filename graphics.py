@@ -72,7 +72,7 @@ def drawChart(chart):
 	glMatrixMode(GL_MODELVIEW)
 
 	glLoadIdentity()
-	glTranslate(-W_CHART / 2.0, 20.0, -100.0)
+	glTranslate(-W_CHART / 2.0, 20.0, -150.0)
 	glRotate(-40.0, 1.0, 0.0, 0.0)
 
 	#tick = pygame.time.get_ticks() - T0
