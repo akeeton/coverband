@@ -22,7 +22,7 @@ def handleEvents(events):
 			drumChart.tryHit(Color('red'))
 
 def main():
-	pygame.init()
+	pygame.display.init()
 	initScreen()
 
 	beats = []
