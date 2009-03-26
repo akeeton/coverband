@@ -22,7 +22,13 @@ def handleEvents(events):
 			drumChart.tryHit(Color('red'))
 
 def main():
-	pygame.display.init()
+	pygame.init()
+	if not pygame.mixer.get_init():
+		raise pyagme.error("pygame.mixer not initialized")
+
+	drumtrack = pygame.mixer.Sound('drumstation/basic01.wav')
+	drumtrack.play()
+
 	initScreen()
 
 	beats = []
