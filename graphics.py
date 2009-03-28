@@ -168,19 +168,19 @@ def GL_BEAT(width, height, wLane, numLanes):
 	# Draw the vertical lines that define the lanes.
 	xLine = 0.0
 	for i in range(numLanes + 1):
-		GL_QUAD_RECT_PRISM(xLine, 0.0 + W_LINE / 2.0, 0.0,
-			W_LINE, height, W_LINE, white) 
+		GL_QUAD_RECT_PRISM((xLine, 0.0 + W_LINE / 2.0, 0.0),
+			(W_LINE, height, W_LINE), white) 
 		xLine += wLane + W_LINE
 
 	# Draw the full-beat horizontal line.
-	GL_QUAD_RECT_PRISM(0.0, 0.0, 0.0,
-			width, W_LINE, W_LINE, white)
+	GL_QUAD_RECT_PRISM((0.0, 0.0, 0.0),
+			(width, W_LINE, W_LINE), white)
 
 	# Draw the half-beat horizontal line.
-	GL_QUAD_RECT_PRISM(0.0, height / 2.0 - W_LINE / 2.0, 0.0,
-			width, W_LINE, W_LINE, gray)
+	GL_QUAD_RECT_PRISM((0.0, height / 2.0 - W_LINE / 2.0, 0.0),
+			(width, W_LINE, W_LINE), gray)
 
-def GL_QUAD_RECT_PRISM(x, y, z, xlen, ylen, zlen, color = Color('white')):
+def GL_QUAD_RECT_PRISM((x, y, z), (xlen, ylen, zlen), color = Color('white')):
 	"""
 	Make GL calls to create a rectangular prism with lower-left corner at
 	the point (x, y, z).

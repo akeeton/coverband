@@ -3,10 +3,20 @@ from __future__ import division
 import time
 
 import pygame
-from OpenGL.GL import *
 
 from graphics import *
 from globals import *
+
+class Unimplemented(Exception):
+	"""
+	Exception for abstract methods that must be implemented.
+	"""
+	def __init__(self, message = ''):
+		baseMessage = 'Behavior not implemented'
+		self.message = baseMessage + (': ' + message if message != '' else '')
+
+	def __str__(self):
+		return self.message
 
 class Time():
 	"""
@@ -20,14 +30,15 @@ class Time():
 
 	def ticks(self):
 		"""
-		Number of ticks since T0 in milliseconds.
+		@return: Number of ticks since T0.
+		@rtype: milliseconds
 		"""
 		return int(1000.0 * time.clock()) - self.T0
 
 
 class Repr:
 	"""
-	Supply a standard __repr__ string for all subclasses.
+	Supply a standard __repr__ method for all subclasses.
 	"""
 	def __repr__(self):
 		return ("<Instance of %s, address %s:\n%s>" %
@@ -46,6 +57,9 @@ class Repr:
 		return result
 
 class SortedList(Repr):
+	"""
+	Deprecated?
+	"""
 	items = []
 
 	def __init__(self, *items):
@@ -99,22 +113,28 @@ class SortedList(Repr):
 	def remove(self, item):
 		self.items.remove(item)
 
-	"""
 class GameEvent(Repr):
-	def update(self, tick):
-		raise NotImplemented()
-
-	def getDurTicks(self):
-		raise NotImplemented()
-		"""
-
 	"""
+	Deprecated!
 	The main base class for all game events.
 
 	@param tick: Time of the event relative to the beginning of the beat or song.
 	@type tick: integer in milliseconds
 	"""
-	"""
+	def update(self, tick):
+		"""
+		Abstract method.
+		@raise Unimplemented:
+		"""
+		raise Unimplemented()
+
+	def getDurTicks(self):
+		"""
+		Abstract method.
+		@raise Unimplemented:
+		"""
+		raise Unimplemented()
+
 	tick = 0
 
 	def __init__(self, tick = 0):
@@ -124,9 +144,18 @@ class GameEvent(Repr):
 		tickcmp = cmp(self.tick, other.tick)
 		if tickcmp == 0:
 			return cmp(id(self), id(other))
-			"""
 
 class GLObject(Repr):
+	"""
+	Provide functionality for creating and drawing objects in OpenGL.
+
+	@ivar displayList: Represents a series of OpenGL calls.
+	@type displayList: integer
+	@ivar glCreationFunc: Function used to make OpenGL calls.
+	@type glCreationFunc: function
+	@ivar created: True iff createGLDisplayList() was called.
+	@type created: bool
+	"""
 	displayList = 0
 	glCreationFunc = None
 	created = False
@@ -135,8 +164,7 @@ class GLObject(Repr):
 		"""
 		@param glCreationFunc: This function will be used to "draw" something
 			to an OpenGL display list.
-		@type glCreationFunc: A function that draws OpenGL objects
-		@param *funcArgs: The arguments to glCreationFunc
+		@type glCreationFunc: function
 		"""
 		if not pygame.display.get_init():
 			raise pygame.error("Display must be initialized before using OpenGL")
@@ -152,6 +180,10 @@ class GLObject(Repr):
 			glDeleteLists(self.displayList, 1)
 	
 	def createGLDisplayList(self, *funcArgs):
+		"""
+		Calls glCreationFunc() and stores the result as an OpenGL display list.
+		@param funcArgs: Arguments to glCreationFunc()
+		"""
 		glNewList(self.displayList, GL_COMPILE)
 		self.glCreationFunc(*funcArgs)
 		glEndList()
@@ -159,6 +191,9 @@ class GLObject(Repr):
 		self.created = True
 	
 	def draw(self):
+		"""
+		Draw the GLObject.
+		"""
 		if not self.created:
 			raise Exception("Must call createGLDisplayList before calling draw")
 
@@ -166,21 +201,44 @@ class GLObject(Repr):
 
 class Note(Repr, GLObject):
 	"""
-	@param position: A fraction representing where on the chart to place the note.
-	@type position: A value clamped to the range [0.0, 1.0]
+	Base class that represents a single note.  The enclosing L{Beat}
+	should set L{tick} and should call L{createGLDisplayList}
+	to set L{coords} and L{dimensions}.
+
+	@ivar color: The color of the note.
 	@type color: L{Color}
+	@ivar position: A fraction representing where on the chart to place the note.
+	@type position: float clamped to the range [0.0, 1.0]
+	@ivar hit: True iff the note has been hit.
+	@type hit: bool
+	@ivar miss: True iff the note was missed.
+	@type miss: bool
+	@ivar coords: XYZ coordinates relative to the enclosing beat.  Set by calling
+		createGLDisplayList.
+	@type coords: tuple of floats
+	@ivar dimensions: Dimensions of the note.  Set by calling createGLDisplayList.
+	@type dimensions: tuple of floats
+	@ivar tick: Absolute time that the note occurs.  Must be set by the enclosing
+		beat.
+	@type tick: milliseconds
 	"""
+
 	color = Color('red')
 	position = 0.0
 	hit = False
 	miss = False
-	(x, y, z) = (0.0, 0.0, 0.0)
-	(xlen, ylen, zlen) = (0.0, 0.0, 0.0)
 
 	# Set after __init__
+	coords = (0.0, 0.0, 0.0)
+	dimensions = (0.0, 0.0, 0.0)
 	tick = 0
 
 	def __init__(self, colorDesc, position):
+		"""
+		@param colorDesc: Description of the color of the note.
+		@type colorDesc: string
+		@param position: L{position}
+		"""
 		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
 
 		self.color = Color(colorDesc)
@@ -193,8 +251,6 @@ class Note(Repr, GLObject):
 		self.position = position
 		self.hit = False
 		self.miss = False
-		# The enclosing Beat object needs to call createGLDisplayList and
-		# set (x, y, z) and (xlen, ylen, zlen).
 	
 	def __cmp__(self, other):
 		positioncmp = cmp(self.position, other.position)
@@ -207,33 +263,38 @@ class Note(Repr, GLObject):
 		else:
 			return positioncmp
 	
-	def createGLDisplayList(self, x, y, z, xlen, ylen, zlen, *funcArgs):
-		self.setCoords(x, y, z)
-		self.setDimensions(xlen, ylen, zlen)
+	def createGLDisplayList(self, coords, dimensions, *funcArgs):
+		"""
+		Create an OpenGL display list of a note at the given coordinates
+		with the given dimensions using L{glCreationFunc}().
 
-		GLObject.createGLDisplayList(self, self.x, self.y, self.z,
-				self.xlen, self.ylen, self.zlen, *funcArgs)
+		@param coords: L{coords}
+		@param funcArgs: Arguments passed to L{glCreationFunc}().
+		"""
+		self.setCoords(coords)
+		self.setDimensions(dimensions)
+
+		GLObject.createGLDisplayList(self, coords, dimensions, *funcArgs)
 
 	def draw(self):
 		if not self.hit:
 			GLObject.draw(self)
 
-	def setCoords(self, x, y, z):
-		self.x = x
-		self.y = y
-		self.z = z
+	def setCoords(self, coords):
+		self.coords = coords
 
-	def setDimensions(self, xlen, ylen, zlen):
-		self.xlen = xlen
-		self.ylen = ylen
-		self.zlen = zlen
+	def setDimensions(self, dimensions):
+		self.dimensions = dimensions
 
 	def setHit(self):
 		self.hit = True
 
 	def setMiss(self):
-		self.createGLDisplayList(self.x, self.y, self.z,
-				self.xlen, self.ylen, self.zlen, Color('miss', alpha = 0.8)) 
+		"""
+		Set L{miss} = True and change the appearance of the note.
+		"""
+		self.createGLDisplayList(self.coords, self.dimensions,
+				Color('miss', alpha = 0.8)) 
 		self.miss = True
 
 	def setTick(self, tick):
@@ -256,19 +317,34 @@ class Note(Repr, GLObject):
 
 def BEATS_PER_SECOND(bpm):
 	return bpm / 60.0
+
 def MILLISECONDS_PER_BEAT(bpm):
 	return 60000 // bpm
 
 class Beat(Repr, GLObject):
 	"""
-	The Beat class is where all of the notes will go.
-	@param bpm: BPM for this beat.
+	Container for L{Note} objects.
+
+	@ivar bpm: Beats per minute.
 	@type bpm: positive integer
-	@param notesList: Sorted list of notes local to this beat.
+	@ivar notes: Notes local to this beat.
+	@type notes: list
+	@ivar durTicks: Duration of this beat in milliseconds.
+	@type durTicks: milliseconds
+	@ivar width: Width of the whole beat.
+	@type width: units
+	@ivar height: Height (length) of the whole beat.
+	@type height: units
+	@ivar wLane: Width of each lane.
+	@type wLane: units
+
+	@ivar tick: Absolute time that this beat begins.
+	@type tick: milliseconds
 	"""
+
 	bpm = 0
+	notes = None
 	durTicks = 0
-	notesList = None
 	width = 0.0
 	height = 0.0
 	wLane = 0.0
@@ -277,6 +353,13 @@ class Beat(Repr, GLObject):
 	tick = 0
 
 	def __init__(self, bpm, *notes):
+		"""
+		Initialize this beat as well as finalize the initialization of
+		each L{Note} passed in.
+
+		@param bpm: L{bpm}
+		@param notes: L{Note} objects to go into this beat.
+		"""
 		GLObject.__init__(self, GL_BEAT)
 
 		numLanes = self.numLanes()
@@ -284,7 +367,7 @@ class Beat(Repr, GLObject):
 		self.bpm = bpm
 		self.durTicks = MILLISECONDS_PER_BEAT(bpm)
 		# TODO: SortedList needed?
-		self.notesList = list(notes)	# SortedList(*notes)
+		self.notes = list(notes)	# SortedList(*notes)
 		self.width = W_CHART
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
 		self.wLane = (W_CHART - (numLanes + 1) * W_LINE) / numLanes
@@ -292,7 +375,7 @@ class Beat(Repr, GLObject):
 		self.createGLDisplayList(self.width, self.height,
 				self.wLane, self.numLanes())
 
-		for note in self.notesList:	
+		for note in self.notes:	
 			wLane = self.wLane
 			noteLane = self.noteLane(note.color)
 
@@ -308,15 +391,15 @@ class Beat(Repr, GLObject):
 			yNote = note.position * self.height - hNote / 2.0
 
 			zNote = hNote / 2.0
-			note.createGLDisplayList(xNote, yNote, zNote,
-					wNote, hNote, hNote, note.getColor())
-
-	def __iter__(self):
-		return self.notesList.__iter__()
+			note.createGLDisplayList((xNote, yNote, zNote),
+					(wNote, hNote, hNote), note.getColor())
 
 	def draw(self):
+		"""
+		Draw the beat and the notes in it.
+		"""
 		GLObject.draw(self)
-		for note in self.notesList:
+		for note in self.notes:
 			note.draw()
 
 	def update(self, tick, yOffset):
@@ -326,8 +409,13 @@ class Beat(Repr, GLObject):
 		glPopMatrix()
 
 	def setTick(self, tick):
+		"""
+		Set the tick for this beat and the tick for each note in this beat.
+
+		@param tick: L{tick}
+		"""
 		self.tick = tick
-		for note in self.notesList:
+		for note in self.notes:
 			note.setTick(self.tick + note.getPosition() * self.durTicks)
 
 	def getTick(self):
@@ -340,19 +428,23 @@ class Beat(Repr, GLObject):
 		return self.height
 
 	def getNotesList(self):
-		return self.notesList
+		return self.notes
 
 	def numLanes(self):
 		"""
 		Abstract method.
+		@raise Unimplemented:
 		"""
-		raise NotImplemented()
+		raise Unimplemented()
+
 	def noteLane(self, color):
 		"""
 		Abstract method.
 		Return the lane that the note goes in.  Lane 0 is the whole chart.
+
+		@raise Unimplemented:
 		"""
-		raise NotImplemented()
+		raise Unimplemented()
 
 
 class DrumsBeat(Repr, Beat):
@@ -367,19 +459,51 @@ class DrumsBeat(Repr, Beat):
 				"blue": 3, "green": 4,
 				"orange": 0 }[str(color)]
 
+class Instrument(Repr):
+	"""
+	Base class that represents how different Instruments behave and sound.
+
+	@cvar identifier: A string identifying the instrument, for example "drums"
+	@type identifier: string
+	
+	@cvar keyMap: A mapping from an input to notes.
+	@type keyMap: dictionary
+	"""
+
+	identifier = ""
+	keyMap = {}
+	whiffSounds = [None]
+
+	def canHitNote(self, note, *keys):
+		"""
+		Return true if the note can be hit with this sequence of keys.
+		"""
+		raise Unimplemented()
+
+	def keyToNote(self, key):
+		return keyMap[key]
+
+	def getKeys(self):
+		return keyMap.keys
+
 class Chart(Repr):
+	"""
+	@type instrument: L{Instrument}
+	"""
 	beats = []
 	currentBeatIndex = 0
 	ticksRemaining = 0
 	lastTick = 0
+	instrument = None
 
 	time = None
 
-	def __init__(self, *beats):
+	def __init__(self, instrument, *beats):
 		self.beats = list(beats)
 		self.currentBeatIndex = 0
 		self.ticksRemaining = self.beats[self.currentBeatIndex].getDurTicks()
 		self.lastTick = 0
+		self.instrument = instrument
 
 		self.time = Time()
 
@@ -395,7 +519,7 @@ class Chart(Repr):
 		index = self.currentBeatIndex
 		curBeat = self.beats[index]
 		prevBeat = self.beats[index - 1] if index > 0 else None
-		notes = curBeat.getNotesList() + prevBeat.getNotesList() if prevBeat else []
+		notes = curBeat.getNotesList() + (prevBeat.getNotesList() if prevBeat else [])
 
 		for note in notes:
 			noteTick = note.getTick()
@@ -415,32 +539,48 @@ class Chart(Repr):
 
 		# Draw a line that represents the current position of the chart.
 		yOffset = 0
-		GL_QUAD_RECT_PRISM(0, 0, 0, W_CHART, W_LINE, W_LINE, Color('yellow'))
+		GL_QUAD_RECT_PRISM((0, 0, 0), (W_CHART, W_LINE, W_LINE), Color('yellow'))
 
 		# Draw all of the beats.
 		for beat in self.beats:
 			beat.update(tick, yOffset)
 			yOffset += beat.getHeight()
 	
-	def tryHit(self, color):
-		"""
-		@type color: L{Color}
-		"""
+	def handleInput(self, *keys):
 		tick = self.time.ticks()
 
 		# Check the current and next beat for notes to hit.
 		index = self.currentBeatIndex
 		curBeat = self.beats[index]
 		nextBeat = self.beats[index + 1] if index + 1 < len(self.beats) else None
-		notes = curBeat.getNotesList() + nextBeat.getNotesList() if nextBeat else []
+		notes = curBeat.getNotesList() + (nextBeat.getNotesList() if nextBeat else [])
 
 		for note in notes:
 			if (not note.getMiss() and not note.getHit()
-					and note.getColor() == color
 					and abs(note.getTick() - tick) < HIT_THRESHOLD):
-				note.setHit()
-				break
+				if self.instrument.canHitNote(note, *keys):
+					note.setHit()
+					return
 
+class Drums(Instrument):
+	identifier = "drums"
+	keyMap = {pygame.K_a: 'red', pygame.K_s: 'yellow', pygame.K_d: 'blue',
+			pygame.K_f: 'green', pygame.K_SPACE: 'orange'}
+
+	def __init__(self):
+		pass
+
+	def canHitNote(self, note, *keys):
+		for key in keys:
+			if str(note.getColor()) == self.keyMap[key]:
+				return True
+
+		return False
+
+class DrumsChart(Chart, Drums):
+	def __init__(self, *beats):
+		Chart.__init__(self, *beats)
+		Drums.__init__(self)
 
 if __name__ == "__main__":
 	import random

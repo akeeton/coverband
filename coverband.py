@@ -2,7 +2,7 @@ import sys
 import copy
 
 import pygame
-from OpenGL.GL import *
+# from OpenGL.GL import *
 
 from data_engine import *
 from graphics import initScreen, drawChart
@@ -18,8 +18,8 @@ def handleEvents(events):
 		elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
 			global paused
 			paused = not paused
-		elif event.type == pygame.KEYDOWN and event.key == pygame.K_a:
-			drumChart.tryHit(Color('red'))
+		elif event.type == pygame.KEYDOWN:
+			drumChart.handleInput(event.key)
 
 def main():
 	pygame.init()
@@ -47,7 +47,7 @@ def main():
 		beats.append(beat2)
 
 	global drumChart
-	drumChart = Chart(*beats)
+	drumChart = DrumsChart(Drums(), *beats)
 
 	while True:
 		global paused
