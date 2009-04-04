@@ -26,22 +26,30 @@ def main():
 	if not pygame.mixer.get_init():
 		raise pyagme.error("pygame.mixer not initialized")
 
-	drumtrack = pygame.mixer.Sound('drumstation/basic01.wav')
+	drumtrack = pygame.mixer.Sound('music/dumb_robo_drums.mp3')
 	drumtrack.play()
 
 	initScreen()
 
 	beats = []
 	for x in range(10):
-		beat1 = DrumsBeat(120,
+		"""
+		beat1 = GuitarBeat(120,
 				Note("red", 0.0),
 				Note("yellow", 0.0),
 				Note("orange", 0.0),
 				Note("yellow", 1.0 / 2.0))
-		beat2 = DrumsBeat(120,
+		beat2 = GuitarBeat(120,
 				Note("orange", 0.0),
 				Note("yellow", 0.0),
 				Note("yellow", 1.0 / 2.0))
+				"""
+		beat1 = GuitarBeat(120,
+				Note('green', 0.0),
+				Note('red', 1.0 / 2.0))
+		beat2 = GuitarBeat(120,
+				Note('yellow', 0.0),
+				Note('blue', 1.0 / 2.0))
 
 		beats.append(beat1)
 		beats.append(beat2)

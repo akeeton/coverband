@@ -427,7 +427,7 @@ class Beat(Repr, GLObject):
 	def getHeight(self):
 		return self.height
 
-	def getNotesList(self):
+	def getNotes(self):
 		return self.notes
 
 	def numLanes(self):
@@ -458,6 +458,18 @@ class DrumsBeat(Repr, Beat):
 		return { "red": 1, "yellow": 2,
 				"blue": 3, "green": 4,
 				"orange": 0 }[str(color)]
+
+class GuitarBeat(Repr, Beat):
+	def __init__(self, bpm, *notes):
+		Beat.__init__(self, bpm, *notes)
+
+	def numLanes(self):
+		return 5
+
+	def noteLane(self, color):
+		return { 'green': 1, 'red': 2,
+				'yellow': 3, 'blue': 4,
+				'orange': 5 }[str(color)]
 
 class Instrument(Repr):
 	"""
@@ -513,14 +525,26 @@ class Chart(Repr):
 			beat.setTick(tick)
 			tick += beat.getDurTicks()
 
+	def getNotesInFocus(self):
+		"""
+		Return notes from the current, previous, and next beats.
+		"""
+		# Check the current and next beat for notes.
+		index = self.currentBeatIndex
+		beats = [self.beats[index]]
+		if index > 0:
+			beats.insert(0, self.beats[index - 1])
+		if index + 1 < len(self.beats):
+			beats.append(self.beats[index + 1])
+
+		notes = reduce(lambda acc, beat: acc + beat.getNotes(), beats, [])
+		return notes
+
 	def update(self):
 		tick = self.time.ticks()
-		# Check for missed notes.
-		index = self.currentBeatIndex
-		curBeat = self.beats[index]
-		prevBeat = self.beats[index - 1] if index > 0 else None
-		notes = curBeat.getNotesList() + (prevBeat.getNotesList() if prevBeat else [])
 
+		# Check for missed notes.
+		notes = self.getNotesInFocus()
 		for note in notes:
 			noteTick = note.getTick()
 			dt = tick - noteTick
@@ -541,7 +565,7 @@ class Chart(Repr):
 		yOffset = 0
 		GL_QUAD_RECT_PRISM((0, 0, 0), (W_CHART, W_LINE, W_LINE), Color('yellow'))
 
-		# Draw all of the beats.
+		# Update (draw) all of the beats.
 		for beat in self.beats:
 			beat.update(tick, yOffset)
 			yOffset += beat.getHeight()
@@ -549,18 +573,15 @@ class Chart(Repr):
 	def handleInput(self, *keys):
 		tick = self.time.ticks()
 
-		# Check the current and next beat for notes to hit.
-		index = self.currentBeatIndex
-		curBeat = self.beats[index]
-		nextBeat = self.beats[index + 1] if index + 1 < len(self.beats) else None
-		notes = curBeat.getNotesList() + (nextBeat.getNotesList() if nextBeat else [])
-
+		notes = self.getNotesInFocus()
 		for note in notes:
 			if (not note.getMiss() and not note.getHit()
 					and abs(note.getTick() - tick) < HIT_THRESHOLD):
 				if self.instrument.canHitNote(note, *keys):
 					note.setHit()
 					return
+
+
 
 class Drums(Instrument):
 	identifier = "drums"
