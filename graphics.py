@@ -240,3 +240,15 @@ def GL_QUAD_RECT_PRISM((x, y, z), (xlen, ylen, zlen), color = Color('white')):
 	glEnd()
 
 	glPopMatrix()
+
+def GL_NOTE((x, y, z), (xlen, ylen, zlen), sustainLen=0.0, color = Color('white')):
+	"""
+	OpenGL representation of a note.  Includes the note body and sustain line.
+	"""
+	# Draw the note body...
+	GL_QUAD_RECT_PRISM((x, y, z), (xlen, ylen, zlen), color)
+
+	x = x + xlen / 2.0 - W_SUSTAIN_LINE / 2.0
+	dimensions = (W_SUSTAIN_LINE, sustainLen, W_SUSTAIN_LINE)
+	# And the sustain line.
+	GL_QUAD_RECT_PRISM((x, y, z), dimensions, color)

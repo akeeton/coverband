@@ -45,6 +45,8 @@ class Repr:
 				(self.__class__.__name__,
 					id(self),
 					self.attrnames()))
+	def __str__(self):
+		return "<Instance of %s, address %s>" % (self.__class__.__name__, id(self))
 
 	def attrnames(self):
 		result = ""
@@ -213,6 +215,8 @@ class Note(Repr, GLObject):
 	@type hit: bool
 	@ivar miss: True iff the note was missed.
 	@type miss: bool
+	@ivar sustain: Duration of sustain
+	@type sustain: milliseconds
 	@ivar coords: XYZ coordinates relative to the enclosing beat.  Set by calling
 		createGLDisplayList.
 	@type coords: tuple of floats
@@ -221,25 +225,31 @@ class Note(Repr, GLObject):
 	@ivar tick: Absolute time that the note occurs.  Must be set by the enclosing
 		beat.
 	@type tick: milliseconds
+	@ivar sustainLen: Length of sustain line
+	@type sustainLen: units
 	"""
 
 	color = Color('red')
 	position = 0.0
 	hit = False
 	miss = False
+	sustain = 0
 
 	# Set after __init__
 	coords = (0.0, 0.0, 0.0)
 	dimensions = (0.0, 0.0, 0.0)
 	tick = 0
+	sustainLen = 0.0
 
-	def __init__(self, colorDesc, position):
+	def __init__(self, colorDesc, position, sustain=0):
 		"""
 		@param colorDesc: Description of the color of the note.
 		@type colorDesc: string
 		@param position: L{position}
+		@param sustain: L{sustain}
+		@type sustain: milliseconds
 		"""
-		GLObject.__init__(self, GL_QUAD_RECT_PRISM)
+		GLObject.__init__(self, GL_NOTE)
 
 		self.color = Color(colorDesc)
 
@@ -251,6 +261,7 @@ class Note(Repr, GLObject):
 		self.position = position
 		self.hit = False
 		self.miss = False
+		self.sustain = sustain
 	
 	def __cmp__(self, other):
 		positioncmp = cmp(self.position, other.position)
@@ -263,18 +274,19 @@ class Note(Repr, GLObject):
 		else:
 			return positioncmp
 	
-	def createGLDisplayList(self, coords, dimensions, *funcArgs):
+	def createGLDisplayList(self, *funcArgs):
 		"""
 		Create an OpenGL display list of a note at the given coordinates
 		with the given dimensions using L{glCreationFunc}().
 
 		@param coords: L{coords}
-		@param funcArgs: Arguments passed to L{glCreationFunc}().
+		@param dimensions: L{dimensions}
+		@param sustainLen: L{sustainLen}
+		@param funcArgs: Arguments passed to L{glCreationFunc}.
 		"""
-		self.setCoords(coords)
-		self.setDimensions(dimensions)
 
-		GLObject.createGLDisplayList(self, coords, dimensions, *funcArgs)
+		GLObject.createGLDisplayList(self, self.coords, self.dimensions,
+				self.sustainLen, *funcArgs)
 
 	def draw(self):
 		if not self.hit:
@@ -293,8 +305,7 @@ class Note(Repr, GLObject):
 		"""
 		Set L{miss} = True and change the appearance of the note.
 		"""
-		self.createGLDisplayList(self.coords, self.dimensions,
-				Color('miss', alpha = 0.8)) 
+		self.createGLDisplayList(Color('miss', alpha = 0.8)) 
 		self.miss = True
 
 	def setTick(self, tick):
@@ -314,6 +325,9 @@ class Note(Repr, GLObject):
 
 	def getColor(self):
 		return self.color
+
+	def getSustain(self):
+		return self.sustain
 
 def BEATS_PER_SECOND(bpm):
 	return bpm / 60.0
@@ -372,9 +386,6 @@ class Beat(Repr, GLObject):
 		self.height = SPD_CHART / BEATS_PER_SECOND(bpm)
 		self.wLane = (W_CHART - (numLanes + 1) * W_LINE) / numLanes
 
-		self.createGLDisplayList(self.width, self.height,
-				self.wLane, self.numLanes())
-
 		for note in self.notes:	
 			wLane = self.wLane
 			noteLane = self.noteLane(note.color)
@@ -391,8 +402,8 @@ class Beat(Repr, GLObject):
 			yNote = note.position * self.height - hNote / 2.0
 
 			zNote = hNote / 2.0
-			note.createGLDisplayList((xNote, yNote, zNote),
-					(wNote, hNote, hNote), note.getColor())
+			note.setCoords((xNote, yNote, zNote))
+			note.setDimensions((wNote, hNote, hNote))
 
 	def draw(self):
 		"""
@@ -401,6 +412,13 @@ class Beat(Repr, GLObject):
 		GLObject.draw(self)
 		for note in self.notes:
 			note.draw()
+	
+	def createGLDisplayList(self, *funcArgs):
+		GLObject.createGLDisplayList(self, self.width, self.height, self.wLane,
+				self.numLanes(), *funcArgs)
+
+		for note in self.notes:
+			note.createGLDisplayList(note.getColor())
 
 	def update(self, tick, yOffset):
 		glPushMatrix()
@@ -519,11 +537,37 @@ class Chart(Repr):
 
 		self.time = Time()
 
-		# FIXME: Is this right?
+		sustainNotes = []
 		tick = self.time.ticks()
 		for beat in self.beats:
 			beat.setTick(tick)
 			tick += beat.getDurTicks()
+
+			# Purge the old sustain notes that have been completed.
+			sustainNotes = filter(lambda (note, sustainLeft): sustainLeft > 0,
+					sustainNotes)
+			# Add all of the sustain notes in this beat with their sustains.
+			sustainNotes += [(note, note.getSustain()) for note in beat.getNotes()
+					if note.getSustain() > 0]
+
+			def updateSustain((note, sustainLeft)):
+				if sustainLeft > beat.getDurTicks():
+					sustain = beat.getDurTicks()
+					sustainLeft -= beat.getDurTicks()
+				else:
+					sustain = sustainLeft
+					sustainLeft = 0
+
+				note.sustainLen += (beat.getHeight() * sustain) / beat.getDurTicks()
+				return (note, sustainLeft)
+
+			# Update the amount of sustain remaining for each note.
+			sustainNotes = map(updateSustain, sustainNotes)
+
+		# Create the draw lists outside of the previous loop since not all of the
+		# information is correct within the loop.
+		for beat in self.beats:
+			beat.createGLDisplayList()
 
 	def getNotesInFocus(self):
 		"""
@@ -537,6 +581,7 @@ class Chart(Repr):
 		if index + 1 < len(self.beats):
 			beats.append(self.beats[index + 1])
 
+		# Combine the notes from each beat into one list of notes.
 		notes = reduce(lambda acc, beat: acc + beat.getNotes(), beats, [])
 		return notes
 
@@ -580,8 +625,6 @@ class Chart(Repr):
 				if self.instrument.canHitNote(note, *keys):
 					note.setHit()
 					return
-
-
 
 class Drums(Instrument):
 	identifier = "drums"

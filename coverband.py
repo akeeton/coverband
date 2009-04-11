@@ -45,8 +45,8 @@ def main():
 				Note("yellow", 1.0 / 2.0))
 				"""
 		beat1 = GuitarBeat(120,
-				Note('green', 0.0),
-				Note('red', 1.0 / 2.0))
+				Note('green', 0.0, sustain=750),
+				Note('red', 1.0 / 2.0, sustain=333))
 		beat2 = GuitarBeat(120,
 				Note('yellow', 0.0),
 				Note('blue', 1.0 / 2.0))
