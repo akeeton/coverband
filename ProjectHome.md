@@ -1,0 +1,1 @@
+Cover Band is an adaptation of certain popular music video games available on consoles.  It will be written in Python and use the pygame and PyOpenGL libraries.
